@@ -23,7 +23,7 @@ end;
 
 ###############################################################################
 ##
-#F MaximalNonsolvableSubgroups( <group> )
+#F MaximalNonsolvableSubgroupsMinSize( <group> )
 ##
 ## calculation of maximal non-solvable subgroups up to conjugacy
 ## with lower bound on their order

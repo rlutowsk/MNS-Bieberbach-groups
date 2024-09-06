@@ -249,17 +249,22 @@ end;
 ##
 ## search for upper bound of Schur index by looking on subgroups
 ##
+## based on Isaacs, Character Theory if finite groups, 1976:
+## - Corollary 10.2h
+## - Lemma 10.4
+##
 QSchurIndexUpperBoundBySubgroups := function( tbl, n, subgroups )
     local f, fs, fus, c, m, min, max, mtbl, mirr, mfs, mc, mind, res, sp, msi, tmp, i, ind, data;
 
     min := QSchurIndexLowerBound(tbl,n);
     c   := Irr(tbl)[n];
-    if ForAll(c, x->x=1) then
-        return 1;
-    fi;
     f   := Field(c);
     fs  := Size( GaloisGroup(f) );
     max := c[1];
+    
+    if max = 1 then
+        return 1;
+    fi;
 
     for m in subgroups do
         mtbl := CharacterTable( m );
@@ -267,7 +272,7 @@ QSchurIndexUpperBoundBySubgroups := function( tbl, n, subgroups )
         res  := RestrictedClassFunction( c, mtbl );
         sp   := List(mirr, chi->ScalarProduct(res, chi));
         ind  := Filtered([1..Size(sp)], i->sp[i]>0);
-        data := List(ind, i->rec( pos:=i, chi:=mirr[i], mult:=Size(GaloisGroup(Field(Concatenation(c,mirr[i]))))*sp[i]/fs));
+        data := List(ind, i->rec( pos:=i, chi:=mirr[i], mult:=sp[i]*Size(GaloisGroup(Field(Concatenation(c,mirr[i]))))/fs));
         SortBy( data, x->[x.mult, x.pos] );
         for mc in data do
             if IsInt(mc.mult/max) then
@@ -279,7 +284,7 @@ QSchurIndexUpperBoundBySubgroups := function( tbl, n, subgroups )
                 max := tmp;
             fi;
             if max < min then
-                Error("Upper bound greater than the lower, shouldn't happen...");
+                Error("Lower bound greater than the Upper, shouldn't happen...");
             fi;
             if max = min then
                 return min;
@@ -527,9 +532,16 @@ function( tbl, dim)
     ind := [2..Size(irr)];
     while ind<>[] do
         c   := Remove( ind, 1 );
-        gc  := List( GaloisGroup(Field(irr[c])), a->(irr[c])^a );
-        ind := Difference(ind,List(gc, x->Position(irr,x)));
-        sum := Sum( gc );
+		if ForAll(irr[c], IsRat) then
+			sum := irr[c];
+		else
+			if 2*irr[c][1] > dim then
+				continue;
+			fi;
+	        gc  := List( GaloisGroup(Field(irr[c])), a->(irr[c])^a );
+		    ind := Difference(ind,List(gc, x->Position(irr,x)));
+			sum := Sum( gc );
+		fi;
         if sum[1] > dim or not IsFaithful(sum) then
             continue;
         fi;
@@ -541,4 +553,10 @@ function( tbl, dim)
     od;
     Sort( qirr );
     return qirr;
+end );
+
+DeclareOperation("HasFaithfulQIrr", [IsGroup, IsPosInt]);
+InstallOtherMethod( HasFaithfulQIrr, [IsGroup, IsPosInt],
+function(grp, dim)
+	return FaithfulQIrr( CharacterTable(grp), dim ) <> [] ;
 end );

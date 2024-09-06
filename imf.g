@@ -143,17 +143,32 @@ MNSMakeImf := function(list, dim, q, z)
     MNSPrintData(r);
 end;
 
+
 ###############################################################################
 ##
-#F MNSMakeImfMin( <cache>, <dimension>, <q-class>, <z-class>, <minimum order> )
+#F MNSMakeImfMin( <cache>, <dimension>, <q-class>, <z-class>, <minimum order>, [<verbose>] )
 ##
 ## Calculate and display info about mns subgroups of the matrix group given by
 ## ImfMatrixGroup( <dimension>, <q-class>, <z-class> )
 ## which order is greater than or equal to <minimum order>
+## 
+## The actual function, which involves some verbosity mechanism is
+DeclareOperation("MNSMakeImfMinOp", [IsList, IsPosInt, IsPosInt, IsPosInt, IsPosInt, IsBool]);
 ##
 ## Use the list <cache> to store the results
 ##
-MNSMakeImfMin := function(list, dim, q, z, min)
+MNSMakeImfMin := function(arg)
+    local verbose;
+    if Size(arg)>3 then
+        verbose := arg[4];
+    else
+        verbose := false;
+    fi;
+    MNSMakeImfMinOp(arg[1], arg[2], arg[3], verbose);
+end;
+
+InstallOtherMethod( MNSMakeImfMinOp,[IsList, IsPosInt, IsPosInt, IsPosInt, IsPosInt, IsBool],
+function(list, dim, q, z, min, verbose)
     local r;
     r := First(list, x->x.imf = [dim,q,z]);
     if r = fail then
@@ -162,8 +177,10 @@ MNSMakeImfMin := function(list, dim, q, z, min)
         r.mnsind := [1..Size(r.ccsr)];
         Add(list,r);
     fi;
-    MNSPrintData(r);
-end;
+    if verbose then
+        MNSPrintData(r);
+    fi;
+end );
 
 ###############################################################################
 ##
@@ -183,7 +200,7 @@ end;
 
 ###############################################################################
 ##
-#F MNSMakeDimMin( <cache>, <dimension>, <minimum order> )
+#F MNSMakeDimMin( <cache>, <dimension>, <minimum order>, [<verbose>] )
 ##
 ## Calculate and display info about mns subgroups of the irreducible integer 
 ## matrix groups in dimension <dimension> which order is greater than or equal 
@@ -191,9 +208,17 @@ end;
 ##
 ## Use the list <cache> to store the results
 ##
-MNSMakeDimMin := function(list, dim, min)
-    local q;
+MNSMakeDimMin := function(arg)
+    local q, list, dim, min, verbose;
+    list := arg[1];
+    dim  := arg[2];
+    min  := arg[3];
+    if Size(arg)>3 then
+        verbose := arg[4];
+    else
+        verbose := false;
+    fi;
     for q in [1..ImfNumberQClasses(dim)] do
-        MNSMakeImfMin(list, dim, q, 1, min);
+        MNSMakeImfMinOp(list, dim, q, 1, min, verbose);
     od;
 end;
