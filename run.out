@@ -1,0 +1,84 @@
+[1] Searching for mns subgroups of imf groups in dimension <=10 of order >=1000000.
+[1] Found 0 groups.
+[1] Time of calculations: 893s.
+[2] Searching for mns groups of order <=1000000 with faithful rational character of degree <=10.
+[2] Found 6 groups.
+[2] Time of calculations: 1398s.
+[3] Calculating rational character tables of the groups.
+
+Rational character table of A5
+
+       1a 3a 2a 5a
+
+X.1     1  1  1  1
+X.2     4  1  . -1
+X.3     5 -1  1  .
+X.4     6  . -2  1
+
+
+Rational character table of A5 2^1
+
+       1a 5a 3a 4a 6a 10a  2a
+
+X.1     1  1  1  1  1   1   1
+X.2     4 -1  1  .  1  -1   4
+X.3     5  . -1  1 -1   .   5
+X.4     6  1  . -2  .   1   6
+X.5     8 -2 -4  .  4   2  -8
+X.6     8 -2  2  . -2   2  -8
+X.7    12  2  .  .  .  -2 -12
+
+
+Rational character table of L3(2)
+
+       1a 2a 3a 4a 7a
+
+X.1     1  1  1  1  1
+X.2     6 -2  .  2 -1
+X.3     6  2  .  . -1
+X.4     7 -1  1 -1  .
+X.5     8  . -1  .  1
+
+
+Rational character table of L3(2) 2^1 = SL(2,7)
+
+       1a 3a 7a 14a 8a 4a 6a  2a
+
+X.1     1  1  1   1  1  1  1   1
+X.2     6  . -1  -1  .  2  .   6
+X.3     6  . -1  -1  2 -2  .   6
+X.4     7  1  .   . -1 -1  1   7
+X.5     8 -1  1   1  .  . -1   8
+X.6     8  2  1  -1  .  . -2  -8
+X.7    16 -2  2  -2  .  .  2 -16
+X.8    24  . -4   4  .  .  . -24
+
+
+Rational character table of L2(8)
+
+       1a 7a 2a 3a 9a
+
+X.1     1  1  1  1  1
+X.2     7  . -1 -2  1
+X.3     8  1  . -1 -1
+X.4    21  . -3  3  .
+X.5    27 -1  3  .  .
+
+
+Rational character table of L3(2) N 2^3
+
+        1a 2a 4a 2b 4b 3a 6a 8a 8b 7a
+
+X.1      1  1  1  1  1  1  1  1  1  1
+X.2      6  6 -2 -2 -2  .  .  2  2 -1
+X.3      6  6  2  2  2  .  .  .  . -1
+X.4      7 -1 -1 -1  3  1 -1 -1  1  .
+X.5      7 -1  3 -1 -1  1 -1  1 -1  .
+X.6      7  7 -1 -1 -1  1  1 -1 -1  .
+X.7      8  8  .  .  . -1 -1  .  .  1
+X.8     14 -2  2 -2  2 -1  1  .  .  .
+X.9     21 -3 -3  1  1  .  .  1 -1  .
+X.10    21 -3  1  1 -3  .  . -1  1  .
+
+[3] Time of calculations: 1s
+gap> 
