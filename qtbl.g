@@ -511,44 +511,54 @@ end;
 
 ################################################################################
 ############################### left to clean up ###############################
-
 if not IsBound( QIrrDebug ) then
     QIrrDebug := false;
 fi;
+################################################################################
 
-
-DeclareOperation("FaithfulQIrr", [ IsCharacterTable, IsPosInt ]);
-InstallOtherMethod( FaithfulQIrr, [ IsCharacterTable, IsPosInt ],
-function( tbl, dim)
+DeclareOperation("FaithfulQIrr", [ IsCharacterTable, IsPosInt, IsInt ]);
+InstallOtherMethod( FaithfulQIrr, [ IsCharacterTable, IsPosInt, IsInt ],
+function( tbl, dim, num )
     local irr, qirr, c, gc, m, grp, ind, sum;
 
     irr  := Filtered( Irr(tbl), char->char[1]<=dim );
     qirr := [ ];
     grp  := UnderlyingGroup( tbl );
-    if Irr( grp ) <> Irr( tbl ) then
-        Error("Irr for grp and tbl must be the same");
+    SetIrr(grp, Irr(tbl));
+    #if Irr( grp ) <> Irr( tbl ) then
+    #    Error("Irr for grp and tbl must be the same");
+    #fi;
+
+    if num<0 then
+        num := 0;
     fi;
 
     ind := [2..Size(irr)];
     while ind<>[] do
         c   := Remove( ind, 1 );
+        if not IsFaithful(irr[c]) then
+            continue;
+        fi;
 		if ForAll(irr[c], IsRat) then
 			sum := irr[c];
 		else
 			if 2*irr[c][1] > dim then
 				continue;
 			fi;
-	        gc  := List( GaloisGroup(Field(irr[c])), a->(irr[c])^a );
+	        gc  := List( GaloisGroup(Field(Rationals, irr[c])), a->(irr[c])^a );
 		    ind := Difference(ind,List(gc, x->Position(irr,x)));
 			sum := Sum( gc );
 		fi;
-        if sum[1] > dim or not IsFaithful(sum) then
+        if sum[1] > dim then
             continue;
         fi;
         m   := SchurIndexByCharacter( Rationals, grp, c );
         sum := m*sum;
         if sum[1] <= dim then
             Add(qirr, sum);
+            if Size(qirr) = num then
+                ind:=[];
+            fi;
         fi;
     od;
     Sort( qirr );
@@ -558,5 +568,5 @@ end );
 DeclareOperation("HasFaithfulQIrr", [IsGroup, IsPosInt]);
 InstallOtherMethod( HasFaithfulQIrr, [IsGroup, IsPosInt],
 function(grp, dim)
-	return FaithfulQIrr( CharacterTable(grp), dim ) <> [] ;
+	return FaithfulQIrr( CharacterTable(grp), dim, 1 ) <> [] ;
 end );

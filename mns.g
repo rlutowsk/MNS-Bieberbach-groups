@@ -114,7 +114,7 @@ end;
 ## returns representatives of conjugacy classes os mns-subgroups of <group>
 ## of order greater than or equal to <minimal order>
 ##
-ConjugacyClassRepsMNSMinSize := function(grp, min)
+ConjugacyClassRepsMNSMinSizePlain := function(grp, min)
     local mns, list, checked, g, sg;
 
     if IsSolvableGroup(grp) or Size(grp) < min then
@@ -137,6 +137,63 @@ ConjugacyClassRepsMNSMinSize := function(grp, min)
         fi;
     od;
     return mns;
+end;
+ConjugacyClassRepsMNSMinSize := ConjugacyClassRepsMNSMinSizePlain;
+
+ConjugacyClassRepsMNSBySolvableRadical := function(grp, min)
+    local sol, hom, mns;
+
+    sol := SolvableRadical(grp);
+    if Size(sol) = 1 then
+        return ConjugacyClassRepsMNSMinSize(grp, min);
+    fi;
+    hom := NaturalHomomorphismByNormalSubgroup(grp, sol);
+    mns := ConjugacyClassRepsMNSMinSize(Image(hom), min/Size(sol));
+    mns := List(mns, x->PreImage(hom, x));
+    return Concatenation( List(mns, x->ConjugacyClassRepsMNSMinSize(x, min) ) );
+end;
+
+#rl := 0;
+BySolvableRadicalOp := function(grp, min, super, checked)
+    local sol, hom, mns, g, max, lst;
+
+    #rl := rl+1;
+    if IsSolvable(grp) or Size(grp)<min or AlreadyTested(checked, super, grp) then
+    #    rl := rl-1;
+        return [];
+    fi;
+
+    Add(checked, grp);
+    lst := [];
+    sol := SolvableRadical(grp);
+    #Print("L: ", rl, "\t Size: ", Size(grp), "/", Size(sol), "\n");
+    if Size(sol)=1 then
+        max := MaximalNonsolvableSubgroups(grp);
+        if max=[] then
+            Add(lst, grp);
+        else
+            Append(lst, Concatenation(List(max, m->BySolvableRadicalOp(m,min,super,checked))));
+        fi;
+    else
+        hom := NaturalHomomorphismByNormalSubgroup(grp, sol);
+        mns := BySolvableRadicalOp( Image(hom), min/Size(sol), Image(hom), [] );
+        mns := List(mns, x->PreImage(hom, x));
+        # find mns subgroups of mns list
+        for g in mns do
+            max := MaximalNonsolvableSubgroups(g);
+            if max=[] then
+                Add(lst, g);
+            else
+                Append(lst, Concatenation(List(max, m->BySolvableRadicalOp(m,min,super,checked))));
+            fi;
+        od;
+    fi;
+    #rl := rl-1;
+    return lst;
+end;
+
+BySolvableRadical := function(grp, min)
+    return BySolvableRadicalOp(grp, min, grp, []);
 end;
 
 ###############################################################################

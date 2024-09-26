@@ -218,7 +218,7 @@ MNSMakeDimMin := function(arg)
     else
         verbose := false;
     fi;
-    for q in [1..ImfNumberQClasses(dim)] do
+    for q in [1..ImfNumberQQClasses(dim)] do
         MNSMakeImfMinOp(list, dim, q, 1, min, verbose);
     od;
 end;
