@@ -1,25 +1,29 @@
 ###############################################################################
 ##
-#F IsMinimalNonSolvableGroup( <group> )
+#P IsMinimalNonSolvableGroup( <group> )
 ##
 ## the group is minimal non-solvable iff it is non-solvable and its maximal 
 ## subgroups are solvable
 ## 
 ## the maximal subgroups are calculated up to conjugacy
 ##
-IsMinimalNonSolvableGroup := function(grp)
+DeclareProperty("IsMinimalNonSolvableGroup", IsGroup);
+InstallMethod(IsMinimalNonSolvableGroup, [IsGroup],
+function(grp)
   return not IsSolvableGroup(grp) and ForAll(MaximalSubgroupClassReps(grp), IsSolvableGroup);
-end;
+end);
 
 ###############################################################################
 ##
-#F MaximalNonsolvableSubgroups( <group> )
+#P MaximalNonsolvableSubgroups( <group> )
 ##
 ## calculation of maximal non-solvable subgroups up to conjugacy
 ##
-MaximalNonsolvableSubgroups := function(grp)
+DeclareProperty("MaximalNonsolvableSubgroups", IsGroup);
+InstallMethod(MaximalNonsolvableSubgroups, [IsGroup],
+function(grp)
     return Filtered(MaximalSubgroupClassReps(grp), x->not IsSolvableGroup(x));
-end;
+end);
 
 ###############################################################################
 ##
@@ -114,7 +118,7 @@ end;
 ## returns representatives of conjugacy classes os mns-subgroups of <group>
 ## of order greater than or equal to <minimal order>
 ##
-ConjugacyClassRepsMNSMinSizePlain := function(grp, min)
+ConjugacyClassRepsMNSMinSize := function(grp, min)
     local mns, list, checked, g, sg;
 
     if IsSolvableGroup(grp) or Size(grp) < min then
@@ -138,8 +142,19 @@ ConjugacyClassRepsMNSMinSizePlain := function(grp, min)
     od;
     return mns;
 end;
-ConjugacyClassRepsMNSMinSize := ConjugacyClassRepsMNSMinSizePlain;
 
+###############################################################################
+##
+#F ConjugacyClassRepsMNSBySolvableRadical( <group>, <minimal order> )
+##
+## returns representatives of conjugacy classes os mns-subgroups of <group>
+## of order greater than or equal to <minimal order>
+##
+## First, it delegates the task to the quotient of <group> by its solvable
+## radical.
+## Second, checks for preimages of the groups found above and looks for MNS
+## subgroups there.
+##
 ConjugacyClassRepsMNSBySolvableRadical := function(grp, min)
     local sol, hom, mns;
 
@@ -153,20 +168,27 @@ ConjugacyClassRepsMNSBySolvableRadical := function(grp, min)
     return Concatenation( List(mns, x->ConjugacyClassRepsMNSMinSize(x, min) ) );
 end;
 
-#rl := 0;
+###############################################################################
+##
+#F ConjugacyClassRepsMNSRecursive( <group>, <minimal order> )
+##
+## returns representatives of conjugacy classes os mns-subgroups of <group>
+## of order greater than or equal to <minimal order>
+##
+## Uses recursion on the group by its solvable radical.
+## If the radical is trivial, uses its maximal subgroups.
+##
+## The following function is called.
 BySolvableRadicalOp := function(grp, min, super, checked)
     local sol, hom, mns, g, max, lst;
 
-    #rl := rl+1;
     if IsSolvable(grp) or Size(grp)<min or AlreadyTested(checked, super, grp) then
-    #    rl := rl-1;
         return [];
     fi;
 
     Add(checked, grp);
     lst := [];
     sol := SolvableRadical(grp);
-    #Print("L: ", rl, "\t Size: ", Size(grp), "/", Size(sol), "\n");
     if Size(sol)=1 then
         max := MaximalNonsolvableSubgroups(grp);
         if max=[] then
@@ -178,7 +200,6 @@ BySolvableRadicalOp := function(grp, min, super, checked)
         hom := NaturalHomomorphismByNormalSubgroup(grp, sol);
         mns := BySolvableRadicalOp( Image(hom), min/Size(sol), Image(hom), [] );
         mns := List(mns, x->PreImage(hom, x));
-        # find mns subgroups of mns list
         for g in mns do
             max := MaximalNonsolvableSubgroups(g);
             if max=[] then
@@ -188,11 +209,10 @@ BySolvableRadicalOp := function(grp, min, super, checked)
             fi;
         od;
     fi;
-    #rl := rl-1;
     return lst;
 end;
 
-BySolvableRadical := function(grp, min)
+ConjugacyClassRepsMNSRecursive := function(grp, min)
     return BySolvableRadicalOp(grp, min, grp, []);
 end;
 

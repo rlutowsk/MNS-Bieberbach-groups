@@ -1,0 +1,78 @@
+gap> LogOutputTo("run.out");
+Error, OutputLogTo: cannot log to run.out in
+  OUTPUT_LOG_TO( name ); at /usr/local/src/gap-4.13.1/lib/streams.gi:275 called from 
+<function "OutputLogTo for output file">( <arguments> )
+ called from read-eval loop at *stdin*:7
+you can 'return;'
+brk> threshold:=10^6;
+Syntax warning: Unbound global variable in *errin*:1
+threshold:=10^6;
+^^^^^^^^^
+1000000
+brk> list:=[];;
+Syntax warning: Unbound global variable in *errin*:2
+list:=[];;
+^^^^
+brk> t:=tic();;
+Syntax warning: Unbound global variable in *errin*:3
+t:=tic();;
+^
+brk> for dim in [1..7] do; MNSMakeDimMin(list, dim, threshold); od;
+Syntax warning: Unbound global variable in *errin*:4
+for dim in [1..7] do; MNSMakeDimMin(list, dim, threshold); od;
+    ^^^
+[ 1, 1, 1 ]
+[ 2, 1, 1 ]
+[ 2, 2, 1 ]
+[ 3, 1, 1 ]
+[ 4, 1, 1 ]
+[ 4, 2, 1 ]
+[ 4, 3, 1 ]
+[ 4, 4, 1 ]
+[ 4, 5, 1 ]
+[ 5, 1, 1 ]
+[ 5, 2, 1 ]
+[ 6, 1, 1 ]
+[ 6, 2, 1 ]
+[ 6, 3, 1 ]
+[ 6, 4, 1 ]
+[ 6, 5, 1 ]
+[ 6, 6, 1 ]
+[ 6, 7, 1 ]
+[ 6, 8, 1 ]
+[ 6, 9, 1 ]
+[ 7, 1, 1 ]
+[ 7, 2, 1 ]
+[ 7, 3, 1 ]
+brk> t:=toc(t);;
+brk> s:=Size(Concatenation(List(list, x->x.ccsr)));
+Syntax warning: Unbound global variable in *errin*:6
+s:=Size(Concatenation(List(list, x->x.ccsr)));
+^
+0
+brk> Print("Found ",  s, " mns subgroups of imf matrix groups in dimensions up to 10.\n");
+Found 0 mns subgroups of imf matrix groups in dimensions up to 10.
+brk> Print("time of calculations: ", t, "s\n");
+time of calculations: 0s
+brk> threshold:=100000;
+100000
+brk> t:=tic();;
+brk> mns := MNSPerfectGroupsMaxSize(threshold);;
+Syntax warning: Unbound global variable in *errin*:11
+mns := MNSPerfectGroupsMaxSize(threshold);;
+^^^
+Error, user interrupt in
+  S.transversal := [  ]; at /usr/local/src/gap-4.13.1/lib/pcgsperm.gi:133 called from 
+AddNormalizingElementPcgs( M0, t ) at /usr/local/src/gap-4.13.1/lib/pcgsperm.gi:260 called from
+ExtendSeriesPermGroup( G, series, cent, desc, elab, w, lev + 1, ndep, bound 
+ ) at /usr/local/src/gap-4.13.1/lib/pcgsperm.gi:235 called from
+ExtendSeriesPermGroup( G, series, cent, desc, elab, w, lev + 1, ndep, bound 
+ ) at /usr/local/src/gap-4.13.1/lib/pcgsperm.gi:235 called from
+ExtendSeriesPermGroup( G, series, cent, desc, elab, w, lev + 1, ndep, bound 
+ ) at /usr/local/src/gap-4.13.1/lib/pcgsperm.gi:235 called from
+ExtendSeriesPermGroup( A, series, cent, desc, elab, y, 0, 0, bound 
+ ) at /usr/local/src/gap-4.13.1/lib/pcgsperm.gi:388 called from
+...  at *errin*:11
+you can 'return;'
+brk_2> #I  Options stack has been reset
+brk> gap> 

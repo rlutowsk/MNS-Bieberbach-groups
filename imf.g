@@ -124,14 +124,16 @@ end;;
 
 ###############################################################################
 ##
-#F MNSMakeImf( <cache>, <dimension>, <q-class>, <z-class> )
+#F MNSMakeImf( <cache>, <dimension>, <q-class>, <z-class>, [verbose] )
 ##
 ## Calculate and display info about mns subgroups of the matrix group given by
 ## ImfMatrixGroup( <dimension>, <q-class>, <z-class> )
 ##
 ## Use the list <cache> to store the results
 ##
-MNSMakeImf := function(list, dim, q, z)
+DeclareOperation("MNSMakeImf", [IsList, IsPosInt, IsPosInt, IsPosInt, IsBool]);
+InstallMethod( MNSMakeImf,[IsList, IsPosInt, IsPosInt, IsPosInt, IsBool],
+function(list, dim, q, z, verbose)
     local r;
     r := First(list, x->x.imf = [dim,q,z]);
     if r = fail then
@@ -140,9 +142,79 @@ MNSMakeImf := function(list, dim, q, z)
         r.mnsind := [1..Size(r.ccsr)];
         Add(list,r);
     fi;
-    MNSPrintData(r);
+    if verbose then
+        MNSPrintData(r);
+    fi;
+end );
+
+InstallOtherMethod( MNSMakeImf, [IsList, IsPosInt, IsPosInt, IsPosInt],
+function(list, dim, q, z)
+    MNSMakeImf(list, dim, q, z, false);
+end);
+
+###############################################################################
+##
+#F MNSMakeDim( <cache>, <dimension>[, <verbose>] )
+##
+## Calculate and display info about mns subgroups of the irreducible integer 
+## matrix groups in dimension <dimension>
+##
+## Use the list <cache> to store the results
+##
+DeclareOperation("MNSMakeDim", [IsList, IsPosInt, IsBool]);
+InstallMethod(MNSMakeDim, [IsList, IsPosInt, IsBool],
+function(list, dim, verbose)
+    local q;
+    for q in [1..ImfNumberQQClasses(dim)] do
+        MNSMakeImf(list, dim, q, 1, verbose);
+    od;
+end);
+InstallOtherMethod(MNSMakeDim, [IsList, IsPosInt],
+function(list, dim)
+    MNSMakeDim(list, dim, false);
+end);
+
+###############################################################################
+##
+#F SetMNSFindMinOp( <num|function> )
+##
+## sets function used in MNSMakeImfMinOp
+##
+SetMNSFindMinOp := function(arg)
+    local funcs, i;
+    funcs := [
+        ConjugacyClassRepsMNSMinSize,
+        ConjugacyClassRepsMNSBySolvableRadical,
+        ConjugacyClassRepsMNSRecursive
+    ];
+    if Size(arg) = 0 then
+        Print("Usage: SetMNSFindOp(opt)\n\n");
+        Print("Available options:\n");
+        for i in [1..Size(funcs)] do
+            Print(i, ": ", NameFunction(funcs[i]), "\n");
+        od;
+        Print("\nOne can also use one of the above functions as an argument.\n");
+        return;
+    fi;
+    i := arg[1];
+    if not i in [1..Size(funcs)] and not i in funcs then
+        Error("The argument must be an integer or a function name ", [1..Size(funcs)], "or a function");
+    fi;
+    if IsBound(MNSFindMinOp) then
+        MakeReadWriteGlobal("MNSFindMinOp");
+        UnbindGlobal("MNSFindMinOp");
+    fi;
+    if IsInt(i) then
+        BindGlobal("MNSFindMinOp", funcs[i]);
+    else
+        BindGlobal("MNSFindMinOp", i);
+    fi;
 end;
 
+###############################################################################
+##
+## set default value for MNSFindMinOp
+SetMNSFindMinOp(ConjugacyClassRepsMNSBySolvableRadical);
 
 ###############################################################################
 ##
@@ -151,29 +223,17 @@ end;
 ## Calculate and display info about mns subgroups of the matrix group given by
 ## ImfMatrixGroup( <dimension>, <q-class>, <z-class> )
 ## which order is greater than or equal to <minimum order>
-## 
-## The actual function, which involves some verbosity mechanism is
-DeclareOperation("MNSMakeImfMinOp", [IsList, IsPosInt, IsPosInt, IsPosInt, IsPosInt, IsBool]);
 ##
 ## Use the list <cache> to store the results
 ##
-MNSMakeImfMin := function(arg)
-    local verbose;
-    if Size(arg)>3 then
-        verbose := arg[4];
-    else
-        verbose := false;
-    fi;
-    MNSMakeImfMinOp(arg[1], arg[2], arg[3], verbose);
-end;
-
-InstallOtherMethod( MNSMakeImfMinOp,[IsList, IsPosInt, IsPosInt, IsPosInt, IsPosInt, IsBool],
+DeclareOperation("MNSMakeImfMin", [IsList, IsPosInt, IsPosInt, IsPosInt, IsPosInt, IsBool]);
+InstallMethod( MNSMakeImfMin,[IsList, IsPosInt, IsPosInt, IsPosInt, IsPosInt, IsBool],
 function(list, dim, q, z, min, verbose)
     local r;
     r := First(list, x->x.imf = [dim,q,z]);
     if r = fail then
         r := InitImfPermData(dim, q, z);
-        r.ccsr := ConjugacyClassRepsMNSMinSize(r.pgrp, min);
+        r.ccsr := MNSFindMinOp(r.pgrp, min);
         r.mnsind := [1..Size(r.ccsr)];
         Add(list,r);
     fi;
@@ -182,25 +242,14 @@ function(list, dim, q, z, min, verbose)
     fi;
 end );
 
-###############################################################################
-##
-#F MNSMakeDim( <cache>, <dimension> )
-##
-## Calculate and display info about mns subgroups of the irreducible integer 
-## matrix groups in dimension <dimension>
-##
-## Use the list <cache> to store the results
-##
-MNSMakeDim := function(list, dim)
-    local q;
-    for q in [1..ImfNumberQClasses(dim)] do
-        MNSMakeImf(list, dim, q, 1);
-    od;
-end;
+InstallOtherMethod( MNSMakeImfMin, [IsList, IsPosInt, IsPosInt, IsPosInt, IsPosInt],
+function(list, dim, q, z, min)
+    MNSMakeImfMin(list, dim, q, z, min, false);
+end);
 
 ###############################################################################
 ##
-#F MNSMakeDimMin( <cache>, <dimension>, <minimum order>, [<verbose>] )
+#F MNSMakeDimMin( <cache>, <dimension>, <minimum order>[, <verbose>] )
 ##
 ## Calculate and display info about mns subgroups of the irreducible integer 
 ## matrix groups in dimension <dimension> which order is greater than or equal 
@@ -208,17 +257,15 @@ end;
 ##
 ## Use the list <cache> to store the results
 ##
-MNSMakeDimMin := function(arg)
-    local q, list, dim, min, verbose;
-    list := arg[1];
-    dim  := arg[2];
-    min  := arg[3];
-    if Size(arg)>3 then
-        verbose := arg[4];
-    else
-        verbose := false;
-    fi;
+DeclareOperation("MNSMakeDimMin", [IsList, IsPosInt, IsPosInt, IsBool]);
+InstallMethod(MNSMakeDimMin, [IsList, IsPosInt, IsPosInt, IsBool],
+function(list, dim, min, verbose)
+    local q;
     for q in [1..ImfNumberQQClasses(dim)] do
-        MNSMakeImfMinOp(list, dim, q, 1, min, verbose);
+        MNSMakeImfMin(list, dim, q, 1, min, verbose);
     od;
-end;
+end);
+InstallOtherMethod(MNSMakeDimMin, [IsList, IsPosInt, IsPosInt],
+function(list, dim, min)
+    MNSMakeDimMin(list, dim, min, false);
+end);

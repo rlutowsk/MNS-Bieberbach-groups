@@ -4,6 +4,9 @@ Reread("perfect.g");
 Reread("imf.g");
 Reread("qtbl.g");
 
+# use the "first divide by the solvable radical" method
+SetMNSFindMinOp(ConjugacyClassRepsMNSBySolvableRadical);
+
 step1 := function(m,t,v)
     local list, dim;
 
@@ -14,19 +17,14 @@ step1 := function(m,t,v)
     return Concatenation(List(list, x->x.ccsr));
 end;
 
-step21 := function(t)
+step2 := function(t)
     return MNSPerfectGroupsMaxSize(t);
 end;
-step22 := function(mns, m)
+step3 := function(mns, m)
     return Filtered( mns, id->HasFaithfulQIrr(PerfectGroup(id),m));
 end;
-step2 := function(m,t)
-    local mns;
-    mns := step21(t);
-    return step22(mns, m);
-end;
 
-step3 := function(mns)
+step4 := function(mns, verbose)
     local id, tbl, qtbl, qtbls;
     qtbls := [];
     for id in mns do 
@@ -35,40 +33,79 @@ step3 := function(mns)
         CharacterTableFromRec(tbl); 
         qtbl:=QCharacterTable(tbl);
         Add(qtbls, qtbl);
-        Print("\nPG.", id[1], ".", id[2], "\n" );
-        Display(qtbl, rec(centralizers:=false, powermaps:=false)); 
-        Print("\n"); 
+        if verbose then
+            Print("\nPG.", id[1], ".", id[2], "\n" );
+            Display(qtbl, rec(centralizers:=false, powermaps:=false)); 
+            Print("\n");
+        fi;
     od;
     return qtbls;
 end;
 
-run := function(maxdim, threshold, verbose)
-    local t, r;
+run := function(arg)
+    local t, r, maxdim, threshold, verbose, print, display;
+
+    maxdim := arg[1];
+    threshold := arg[2];
+
+    verbose := false;
+    print := function(arg)
+        return ;
+    end;
+    display := function(arg)
+        return ;
+    end;
+    if Size(arg)>2 then
+        if not arg[3] in [0,1,2,3] then
+            Error("Usage: run(maxdim, threshold[, verbose level])\n");
+        fi;
+        if arg[3]>=1 then
+            display := Display;
+        fi;
+        if arg[3]>=2 then
+            print := Print;
+        fi;
+        if arg[3]=3 then
+            verbose:=true;
+        fi;
+    fi;
 
     LogOutputTo("run.out");
 
     r := rec();
     
-    Print("[1] Searching for mns subgroups of imf groups in dimension <=", maxdim," of order >=", threshold, ".\n");
+    print("[1] Searching for mns subgroups of imf groups in dimension <=", maxdim," of order >=", threshold, ".\n");
     t:=tic();;
     r.groups:=step1(maxdim, threshold, verbose);
     t:=toc(t);;
-    Print("[1] Found ",  Size(r.groups), " groups.\n");
-    Print("[1] Time of calculations: ", t, "s.\n");
+    print("[1] Found ",  Size(r.groups), " groups.\n");
+    print("[1] Time of calculations: ", t, "s.\n");
 
-    Print("[2] Searching for mns groups of order <=", threshold, " with faithful rational character of degree <=",maxdim,".\n");
+    print("[2] Searching for mns groups of order <=", threshold, ".\n");
     t:=tic();;
-    r.mnsid := step2(maxdim, threshold);
+    r.mnsid := step2(threshold);
     t:=toc(t);;
-    Print("[2] Found ", Size(r.mnsid), " groups.\n");
-    Print("[2] Time of calculations: ", t, "s.\n");
-    Print("[2] The groups' perfect ids: ", r.mnsid, "\n");
+    print("[2] Found ", Size(r.mnsid), " groups.\n");
+    print("[2] Time of calculations: ", t, "s.\n");
+    if verbose then
+        print("[2] The groups' perfect ids: ", r.mnsid, "\n");
+    fi;
 
-    Print("[3] Calculating rational character tables of the groups.\n");
+    print("[3] Searching for mns groups of order <=", threshold, " with faithful rational character of degree <=",maxdim,".\n");
     t:=tic();;
-    r.qtbls := step3(r.mnsid);;
+    r.imfid := step3(r.mnsid, maxdim);
     t:=toc(t);;
-    Print("[3] Time of calculations: ", t, "s\n");
+    print("[3] Found ", Size(r.imfid), " groups.\n");
+    print("[3] Time of calculations: ", t, "s.\n");
+    if verbose then
+        print("[3] The groups' perfect ids: ", r.imfid, "\n");
+    fi;
+
+    print("[4] Calculating rational character tables of the groups.\n");
+    t:=tic();;
+    r.qtbls := step4(r.imfid, display=Display);;
+    t:=toc(t);;
+    print("[4] Time of calculations: ", t, "s\n");
 
     LogOutputTo();
 
