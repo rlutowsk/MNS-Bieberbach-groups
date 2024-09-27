@@ -32,3 +32,22 @@ Function `run` accepts the third argument, describing the verbosity level:
 - 1: print the rational character tables of minimal nonsolvable subgroups found
 - 2: additionally, print some information about what is going on
 - 3: print more details on what group is calculated
+
+### More on the run function
+
+#### Syntax
+
+```gap
+run(maxdim, theshold[, verbose])
+```
+
+#### Steps
+
+1. Find conjugacy classes of minimal nonsolvable subgroups of order at least `threshold` of irreducible subgroups of GL(n,Z) for n less than or equal to `maxdim`.
+1. Find minimal nonsolvable perfect groups of order up to `threshold`.
+1. Find minimal nonsolvable perfect groups of order up to `threshold`, which have faithful rational representations in dimensions less than or equal to `maxdim`.
+1. Calculate rational character tables of the groups found in the previous step.
+
+### Notes
+
+We are in fact interested in the isomorphism types of groups, hence we consider finite irreducible subgroups of GL(n,Q). In particular, we use the function `ImfNumberQQClasses` from the library of irreducible maximal finite subgroups of GL(n,Z) of GAP.
