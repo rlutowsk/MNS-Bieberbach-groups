@@ -14,16 +14,16 @@ The repository contains code needed for calculations presented in the article
 
 ## How to reproduce the results
 
-Simply invoke
+In the GAP shell simply invoke
 
-```gap
-gap> Read("run.g");
+```
+Read("run.g");
 ```
 
 followed by
 
-```gap
-gap> run(10, 10^6);
+```
+run(10, 10^6);
 ```
 
 Function `run` accepts the third argument, describing the verbosity level:
