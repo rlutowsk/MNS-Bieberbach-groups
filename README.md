@@ -11,6 +11,7 @@ The repository contains code needed for calculations presented in the article
 - `qtbl.g`: dealing with rational characters and character tables of finite groups
 - `perfect.g`: finding mns groups in the library of perfect groups
 - `run.g`: tools to reproduce the results of the article
+- `run.out`: example output of the `run` function described below
 
 ## How to reproduce the results
 
@@ -33,7 +34,7 @@ Function `run` accepts the third argument, describing the verbosity level:
 - 2: additionally, print some information about what is going on
 - 3: print more details on what group is calculated
 
-### More on the run function
+### More on the `run` function
 
 #### Syntax
 
