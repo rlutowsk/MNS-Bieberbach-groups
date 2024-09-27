@@ -16,13 +16,13 @@ The repository contains code needed for calculations presented in the article
 
 In the GAP shell simply invoke
 
-```
+```gap
 Read("run.g");
 ```
 
 followed by
 
-```
+```gap
 run(10, 10^6);
 ```
 
