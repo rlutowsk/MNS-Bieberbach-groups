@@ -28,7 +28,7 @@ gap> run(10, 10^6);
 
 Function `run` accepts the third argument, describing the verbosity level:
 
-    - 0: default - print nothing
-    - 1: print the rational character tables of minimal nonsolvable subgroups found
-    - 2: additionally, print some information about what is going on
-    - 3: print more details on what group is calculated
+- 0: default - print nothing
+- 1: print the rational character tables of minimal nonsolvable subgroups found
+- 2: additionally, print some information about what is going on
+- 3: print more details on what group is calculated
