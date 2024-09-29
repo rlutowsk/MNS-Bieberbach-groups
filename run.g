@@ -76,7 +76,7 @@ run := function(arg)
     
     print("[1] Searching for mns subgroups of imf groups in dimension <=", maxdim," of order >=", threshold, ".\n");
     t:=tic();;
-    r.groups:=step1(maxdim, threshold, verbose);
+    r.imfsg:=step1(maxdim, threshold, verbose);
     t:=toc(t);;
     print("[1] Found ",  Size(r.groups), " groups.\n");
     print("[1] Time of calculations: ", t, "s.\n");

@@ -15,11 +15,11 @@ end);
 
 ###############################################################################
 ##
-#P MaximalNonsolvableSubgroups( <group> )
+#A MximalNonsolvableSubgroups( <group> )
 ##
 ## calculation of maximal non-solvable subgroups up to conjugacy
 ##
-DeclareProperty("MaximalNonsolvableSubgroups", IsGroup);
+DeclareAttribute("MaximalNonsolvableSubgroups", IsGroup);
 InstallMethod(MaximalNonsolvableSubgroups, [IsGroup],
 function(grp)
     return Filtered(MaximalSubgroupClassReps(grp), x->not IsSolvableGroup(x));
