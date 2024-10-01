@@ -179,14 +179,16 @@ end;
 ## If the radical is trivial, uses its maximal subgroups.
 ##
 ## The following function is called.
-BySolvableRadicalOp := function(grp, min, super, checked)
-    local sol, hom, mns, g, max, lst;
+BySolvableRadicalOp := function(group, min, super, checked)
+    local sol, hom, mns, g, m, max, lst, iso, grp;
+
+    grp := CommutatorSubgroup(group, group);
 
     if IsSolvable(grp) or Size(grp)<min or AlreadyTested(checked, super, grp) then
         return [];
     fi;
-
     Add(checked, grp);
+
     lst := [];
     sol := SolvableRadical(grp);
     if Size(sol)=1 then
@@ -194,7 +196,9 @@ BySolvableRadicalOp := function(grp, min, super, checked)
         if max=[] then
             Add(lst, grp);
         else
-            Append(lst, Concatenation(List(max, m->BySolvableRadicalOp(m,min,super,checked))));
+            for m in max do
+                Append(lst, BySolvableRadicalOp(m, min, super, checked));
+            od;
         fi;
     else
         hom := NaturalHomomorphismByNormalSubgroup(grp, sol);
@@ -205,7 +209,9 @@ BySolvableRadicalOp := function(grp, min, super, checked)
             if max=[] then
                 Add(lst, g);
             else
-                Append(lst, Concatenation(List(max, m->BySolvableRadicalOp(m,min,super,checked))));
+                for m in max do
+                    Append(lst, BySolvableRadicalOp(m, min, super, checked));
+                od;
             fi;
         od;
     fi;

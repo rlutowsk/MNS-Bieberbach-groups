@@ -105,7 +105,7 @@ MNSPrintData := function(arg)
     data:= [["Index","Description","Group id","Irreducible/C","Has trivial"]];
     max := List(data[1],Length);
     for i in r.mnsind do
-        row := List([i,StructureDescription(r.ccsr[i]),IdGroup(r.ccsr[i]),MNSIsIrreducible(r,i),MNSHasTrivial(r,i)],String);
+        row := List([i,StructureDescription(r.ccsr[i]:short),PerfectIdentification(r.ccsr[i]),MNSIsIrreducible(r,i),MNSHasTrivial(r,i)],String);
         Add(data,row);
         for j in [1..5] do
             if Length(row[j]) > max[j] then

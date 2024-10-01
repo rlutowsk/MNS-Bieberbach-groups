@@ -77,8 +77,9 @@ run := function(arg)
     print("[1] Searching for mns subgroups of imf groups in dimension <=", maxdim," of order >=", threshold, ".\n");
     t:=tic();;
     r.imfsg:=step1(maxdim, threshold, verbose);
+    r.tmpid:=SSortedList(r.imfsg, PerfectIdentification);
     t:=toc(t);;
-    print("[1] Found ",  Size(r.groups), " groups.\n");
+    print("[1] Found ",  Size(r.imfsg), " groups.\n");
     print("[1] Time of calculations: ", t, "s.\n");
 
     print("[2] Searching for mns groups of order <=", threshold, ".\n");
@@ -100,6 +101,8 @@ run := function(arg)
     if verbose then
         print("[3] The groups' perfect ids: ", r.imfid, "\n");
     fi;
+    Append(r.imfid, r.tmpid);
+    Unbind(r.tmpid);
 
     print("[4] Calculating rational character tables of the groups.\n");
     t:=tic();;
