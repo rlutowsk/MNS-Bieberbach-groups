@@ -170,6 +170,18 @@ end;
 
 ###############################################################################
 ##
+#A PerfectDerivedSubgroup( <grp> )
+##
+## return last element in the derived series of a <grp>
+##
+DeclareAttribute("PerfectDerivedSubgroup", IsGroup);
+InstallMethod(PerfectDerivedSubgroup, [IsGroup],
+function(grp)
+    return DerivedSeriesOfGroup(grp)[DerivedLength(grp)+1];
+end
+);
+###############################################################################
+##
 #F ConjugacyClassRepsMNSRecursive( <group>, <minimal order> )
 ##
 ## returns representatives of conjugacy classes os mns-subgroups of <group>
@@ -182,7 +194,7 @@ end;
 BySolvableRadicalOp := function(group, min, super, checked)
     local sol, hom, mns, g, m, max, lst, iso, grp;
 
-    grp := CommutatorSubgroup(group, group);
+    grp := PerfectDerivedSubgroup(group);
 
     if IsSolvable(grp) or Size(grp)<min or AlreadyTested(checked, super, grp) then
         return [];
