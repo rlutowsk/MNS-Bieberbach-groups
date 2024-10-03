@@ -1,3 +1,10 @@
+################################################################################
+############################### left to clean up ###############################
+if not IsBound( QIrrDebug ) then
+    QIrrDebug := false;
+fi;
+################################################################################
+
 ###############################################################################
 ##
 #F IdCtbl( ctbl )
@@ -6,7 +13,6 @@
 ## group in the library
 ##
 IdCtbl := x->EvalString(Identifier(x));
-
 
 LoadPackage("wedderga");
 ###############################################################################
@@ -45,6 +51,88 @@ SchurIndexByCharacterDescent := function( f, grp, c )
     	  Add(qchi, chi[First([1..NrConjugacyClasses(tbl)], i->r in ConjugacyClasses(tbl)[i])]);
     od;
     return SchurIndexByCharacter( f, q,  Character( qtbl, MakeImmutable( qchi ) ) );
+end;
+
+
+###############################################################################
+##
+#F QSchurIndexLowerBound( <ctbl>, <n> )
+##
+## if the Frobenius-Schur index of Irr(ctbl)[n] is -1, then the Schur index 
+## is at least 2
+##
+QSchurIndexLowerBound := function( tbl, n )
+    local f, c;
+
+    if Indicator(tbl,2)[n] = -1 then
+        return 2;
+    fi;
+    return 1;
+end;
+
+###############################################################################
+##
+#F QSchurIndexUpperBoundBySubgroups( <ctbl>, <n>, <subgroups> )
+##
+## search for upper bound of Schur index by looking on subgroups
+##
+## based on Isaacs, Character Theory if finite groups, 1976:
+## - Corollary 10.2h
+## - Lemma 10.4
+##
+QSchurIndexUpperBoundBySubgroups := function( tbl, n, subgroups )
+    local f, fs, fus, c, m, min, max, mtbl, mirr, mfs, mc, mind, res, sp, msi, tmp, i, ind, data;
+
+    min := QSchurIndexLowerBound(tbl,n);
+    c   := Irr(tbl)[n];
+    f   := Field(c);
+    fs  := Size( GaloisGroup(f) );
+    max := c[1];
+    
+    if max = 1 then
+        return 1;
+    fi;
+
+    for m in subgroups do
+        mtbl := CharacterTable( m );
+        mirr := Irr( mtbl );
+        res  := RestrictedClassFunction( c, mtbl );
+        sp   := List(mirr, chi->ScalarProduct(res, chi));
+        ind  := Filtered([1..Size(sp)], i->sp[i]>0);
+        data := List(ind, i->rec( pos:=i, chi:=mirr[i], mult:=sp[i]*Size(GaloisGroup(Field(Concatenation(c,mirr[i]))))/fs));
+        SortBy( data, x->[x.mult, x.pos] );
+        for mc in data do
+            if IsInt(mc.mult/max) then
+                continue;
+            fi;
+            msi := SchurIndexByCharacterDescent( Field(mc.chi), m, mc.pos );
+            tmp := Gcd(max, msi * mc.mult);
+            if tmp < max then
+                max := tmp;
+            fi;
+            if max < min then
+                Error("Lower bound greater than the Upper, shouldn't happen...");
+            fi;
+            if max = min then
+                return min;
+            fi;
+        od;
+    od;
+    return max;
+end;
+
+QSchurIndexUpperBound := function( tbl, n )
+    return QSchurIndexUpperBoundBySubgroups( tbl, n, MaximalSubgroupClassReps(UnderlyingGroup(tbl)) );
+end;
+
+QSchurIndexByLUBound := function(tbl, n)
+    local min, max;
+    min := QSchurIndexLowerBound(tbl, n);
+    max := QSchurIndexUpperBound(tbl, n);
+    if min<>max then
+        return fail;
+    fi;
+    return min;
 end;
 
 ###############################################################################
@@ -127,7 +215,10 @@ function(tbl)
     indices := [];
     for orb in QSchurIndexOrbits(tbl) do
         c := orb[1];
-        m := SchurIndexByCharacterDescent( Field(Irr(tbl)[c]), UnderlyingGroup(tbl), c);
+        m := QSchurIndexByLUBound(tbl, c);
+        if m=fail then
+            m := SchurIndexByCharacterDescent( Field(Irr(tbl)[c]), UnderlyingGroup(tbl), c);
+        fi;
         indices{orb} := List(orb, x->m);
     od;
     return indices;
@@ -227,76 +318,6 @@ InstallMethod( IsFaithful, [IsCharacter], function( char )
     return Size( Filtered(char, x->x=char[1]) ) = 1;
 end );
 
-###############################################################################
-##
-#F QSchurIndexLowerBound( <ctbl>, <n> )
-##
-## if the Frobenius-Schur index of Irr(ctbl)[n] is -1, then the Schur index 
-## is at least 2
-##
-QSchurIndexLowerBound := function( tbl, n )
-    local f, c;
-
-    if Indicator(tbl,2)[n] = -1 then
-        return 2;
-    fi;
-    return 1;
-end;
-
-###############################################################################
-##
-#F QSchurIndexUpperBoundBySubgroups( <ctbl>, <n>, <subgroups> )
-##
-## search for upper bound of Schur index by looking on subgroups
-##
-## based on Isaacs, Character Theory if finite groups, 1976:
-## - Corollary 10.2h
-## - Lemma 10.4
-##
-QSchurIndexUpperBoundBySubgroups := function( tbl, n, subgroups )
-    local f, fs, fus, c, m, min, max, mtbl, mirr, mfs, mc, mind, res, sp, msi, tmp, i, ind, data;
-
-    min := QSchurIndexLowerBound(tbl,n);
-    c   := Irr(tbl)[n];
-    f   := Field(c);
-    fs  := Size( GaloisGroup(f) );
-    max := c[1];
-    
-    if max = 1 then
-        return 1;
-    fi;
-
-    for m in subgroups do
-        mtbl := CharacterTable( m );
-        mirr := Irr( mtbl );
-        res  := RestrictedClassFunction( c, mtbl );
-        sp   := List(mirr, chi->ScalarProduct(res, chi));
-        ind  := Filtered([1..Size(sp)], i->sp[i]>0);
-        data := List(ind, i->rec( pos:=i, chi:=mirr[i], mult:=sp[i]*Size(GaloisGroup(Field(Concatenation(c,mirr[i]))))/fs));
-        SortBy( data, x->[x.mult, x.pos] );
-        for mc in data do
-            if IsInt(mc.mult/max) then
-                continue;
-            fi;
-            msi := SchurIndexByCharacterDescent( Field(mc.chi), m, mc.pos );
-            tmp := Gcd(max, msi * mc.mult);
-            if tmp < max then
-                max := tmp;
-            fi;
-            if max < min then
-                Error("Lower bound greater than the Upper, shouldn't happen...");
-            fi;
-            if max = min then
-                return min;
-            fi;
-        od;
-    od;
-    return max;
-end;
-
-QSchurIndexUpperBound := function( tbl, n )
-    return QSchurIndexUpperBoundBySubgroups( tbl, n, MaximalSubgroupClassReps(UnderlyingGroup(tbl)) );
-end;
 
 #################################################################################################################################
 ##
@@ -508,13 +529,6 @@ RepairOrderInCharacterTable := function(tbl)
 
     return CharacterTableFromRec(r);
 end;
-
-################################################################################
-############################### left to clean up ###############################
-if not IsBound( QIrrDebug ) then
-    QIrrDebug := false;
-fi;
-################################################################################
 
 DeclareOperation("FaithfulQIrr", [ IsCharacterTable, IsPosInt, IsInt ]);
 InstallOtherMethod( FaithfulQIrr, [ IsCharacterTable, IsPosInt, IsInt ],
