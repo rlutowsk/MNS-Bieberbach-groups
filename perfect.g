@@ -19,7 +19,7 @@ MNSPerfectGroupsMaxSize := function(max)
     ids := [];
     for s in sizes do
         for i in [1..NrPerfectGroups(s)] do
-            if IsMinimalNonSolvableGroup(PerfectGroup(s,i)) then
+            if IsMinimalNonsolvableGroup(PerfectGroup(s,i)) then
                 Add(ids, [s,i]);
             fi;
         od;

@@ -1,16 +1,30 @@
 ###############################################################################
 ##
-#P IsMinimalNonSolvableGroup( <group> )
+#P IsMinimalSimpleGroup( <group> )
+#P IsMinimalNonsolvableGroup( <group> )
 ##
-## the group is minimal non-solvable iff it is non-solvable and its maximal 
+## the group is minimal non-solvable iff it is non-solvable and its maximal
 ## subgroups are solvable
-## 
+##
 ## the maximal subgroups are calculated up to conjugacy
 ##
-DeclareProperty("IsMinimalNonSolvableGroup", IsGroup);
-InstallMethod(IsMinimalNonSolvableGroup, [IsGroup],
+DeclareProperty("IsMinimalSimpleGroup", IsGroup);
+InstallMethod(IsMinimalSimpleGroup, [IsGroup],
 function(grp)
-  return not IsSolvableGroup(grp) and ForAll(MaximalSubgroupClassReps(grp), IsSolvableGroup);
+    return IsSimpleGroup(grp) and ForAll(MaximalSubgroupClassReps(grp), IsSolvableGroup);
+end
+);
+
+DeclareProperty("IsMinimalNonsolvableGroup", IsGroup);
+InstallMethod(IsMinimalNonsolvableGroup, [IsGroup],
+function(grp)
+    if IsSolvableGroup(grp) or not IsPerfectGroup(grp) then
+        return false;
+    fi;
+    if not IsMinimalSimpleGroup(grp/SolvableRadical(grp)) then
+        return false;
+    fi;
+    return ForAll(MaximalSubgroupClassReps(grp), IsSolvableGroup);
 end);
 
 ###############################################################################
@@ -24,6 +38,19 @@ InstallMethod(MaximalNonsolvableSubgroups, [IsGroup],
 function(grp)
     return Filtered(MaximalSubgroupClassReps(grp), x->not IsSolvableGroup(x));
 end);
+
+###############################################################################
+##
+#A PerfectDerivedSubgroup( <grp> )
+##
+## return last element in the derived series of a <grp>
+##
+DeclareAttribute("PerfectDerivedSubgroup", IsGroup);
+InstallMethod(PerfectDerivedSubgroup, [IsGroup],
+function(grp)
+    return DerivedSeriesOfGroup(grp)[DerivedLength(grp)+1];
+end
+);
 
 ###############################################################################
 ##
@@ -87,7 +114,7 @@ end;
 ## returns representatives of conjugacy classes os mns-subgroups of <group>
 ##
 ConjugacyClassRepsMNS := function(grp)
-    local mns, list, checked, g, sg;    
+    local mns, list, checked, g, sg;
 
     if IsSolvableGroup(grp) then
         return [];
@@ -110,6 +137,57 @@ ConjugacyClassRepsMNS := function(grp)
     od;
     return mns;
 end;
+
+tmp1 := function(list, group)
+    return First(list, x->x.size=Size(group));
+end;
+
+tmp2 := function(grp, g1, g2)
+    return IsConjugate(grp, g1, g2);
+end;
+
+ConjugacyClassRepsMNSAlt := function(n)
+    local mns, list, checked, g, sg, grp, s, sym;
+
+    if not IsInt(n) then
+        Error("Argument must be an integer");
+    fi;
+    if n<5 then
+        return [];
+    fi;
+    grp := AlternatingGroup(n);
+    sym := SymmetricGroup(n);
+
+    mns  := [];
+    list := [grp];
+    checked := [ ];
+    while list <> [] do
+    #for g in list do
+        g := Remove(list);
+        #Print(0, " / ", Size(list), " / ", Size(checked), "\n");
+        #s := tmp1(checked, g); #First(checked, x->x.size=Size(g));
+        #if s = fail then
+        #    s := rec( size:=Size(g), grps := []);
+        #    Add(checked, s);
+        #fi;
+        #if ForAny(checked, x->ContainedConjugates(grp, g, x, true)<>fail) then
+        #    continue;
+        #fi;
+        #Add( checked, g );
+        sg := MaximalNonsolvableSubgroups(g);
+        if sg = [] then
+            if ForAll(mns, x->ContainedConjugates(grp, g, x, true)=fail) then
+                Add( mns, g );
+            fi;
+        else
+            sg := Filtered(sg, x->NrMovedPoints(x)=n);
+            sg := List(sg, PerfectDerivedSubgroup);
+            Append(list, Filtered(sg, x->NrMovedPoints(x)=n));
+        fi;
+    od;
+    return mns;
+end;
+
 
 ###############################################################################
 ##
@@ -136,7 +214,7 @@ ConjugacyClassRepsMNSMinSize := function(grp, min)
         Add( checked, g );
         sg := MaximalNonsolvableSubgroupsMinSize(g, min);
         Append( list, sg );
-        if sg = [] and IsMinimalNonSolvableGroup(g) then
+        if sg = [] and IsMinimalNonsolvableGroup(g) then
             Add( mns, g );
         fi;
     od;
@@ -168,18 +246,6 @@ ConjugacyClassRepsMNSBySolvableRadical := function(grp, min)
     return Concatenation( List(mns, x->ConjugacyClassRepsMNSMinSize(x, min) ) );
 end;
 
-###############################################################################
-##
-#A PerfectDerivedSubgroup( <grp> )
-##
-## return last element in the derived series of a <grp>
-##
-DeclareAttribute("PerfectDerivedSubgroup", IsGroup);
-InstallMethod(PerfectDerivedSubgroup, [IsGroup],
-function(grp)
-    return DerivedSeriesOfGroup(grp)[DerivedLength(grp)+1];
-end
-);
 ###############################################################################
 ##
 #F ConjugacyClassRepsMNSRecursive( <group>, <minimal order> )
@@ -230,8 +296,114 @@ BySolvableRadicalOp := function(group, min, super, checked)
     return lst;
 end;
 
+BySolvableRadicalOp1 := function(group, min, super, checked)
+    local sol, hom, mns, g, m, max, lst, iso, grp, img, list, lcheck, lg, g1;
+
+    g1 := PerfectDerivedSubgroup(group);
+    NormalSubgroups(g1);
+
+    for grp in DirectFactorsOfGroup(g1) do
+
+    if IsSolvable(grp) or Size(grp)<min or AlreadyTested(checked, super, grp) then
+        return [];
+    fi;
+    Add(checked, grp);
+
+    lst := [];
+    sol := SolvableRadical(grp);
+    if Size(sol)=1 then
+        max := MaximalNonsolvableSubgroups(grp);
+        if max=[] then
+            Add(lst, grp);
+        else
+            for m in max do
+                Append(lst, BySolvableRadicalOp1(m, min, super, checked));
+            od;
+        fi;
+    else
+        hom := NaturalHomomorphismByNormalSubgroup(grp, sol);
+        mns := BySolvableRadicalOp1( Image(hom), min/Size(sol), Image(hom), [] );
+        for img in mns do
+            lg   := PreImage(hom, img);
+            list := [PerfectDerivedSubgroup(PreImage(hom, img))];
+            lcheck := [];
+            while list<>[] do
+                g := Remove(list,1);
+                if ForAny(lcheck, x->IsConjugate(lg, g, x)) then
+                    continue;
+                fi;
+                Add(lcheck, g);
+                max := MaximalNonsolvableSubgroups(g);
+                if max=[] then
+                    if not ForAny(lst, x->IsConjugate(super, g, x)) then
+                        Add(lst, g);
+                    fi;
+                else
+                    Append(list, Filtered(List(max, PerfectDerivedSubgroup), x->Size(x)>=min));
+                fi;
+            od;
+        od;
+    fi;
+
+    od;
+    return lst;
+end;
+
+BySolvableRadicalOp2 := function(group, min, super, checked)
+    local sol, hom, mns, g, m, max, lst, iso, grp, img, list, lcheck, lg, g1;
+
+    g1 := PerfectResiduum(group);
+    NormalSubgroups(g1);
+
+    for grp in DirectFactorsOfGroup(g1) do
+
+    if IsSolvable(grp) or Size(grp)<min or AlreadyTested(checked, super, grp) then
+        return [];
+    fi;
+    Add(checked, grp);
+
+    lst := [];
+    sol := SolvableRadical(grp);
+    if Size(sol)=1 then
+        max := MaximalNonsolvableSubgroups(grp);
+        if max=[] then
+            Add(lst, grp);
+        else
+            for m in max do
+                Append(lst, BySolvableRadicalOp2(m, min, super, checked));
+            od;
+        fi;
+    else
+        hom := NaturalHomomorphismByNormalSubgroup(grp, sol);
+        mns := BySolvableRadicalOp2( Image(hom), min/Size(sol), Image(hom), [] );
+        for img in mns do
+            lg   := PreImage(hom, img);
+            list := [PerfectResiduum(PreImage(hom, img))];
+            lcheck := [];
+            while list<>[] do
+                g := Remove(list,1);
+                if ForAny(lcheck, x->IsConjugate(lg, g, x)) then
+                    continue;
+                fi;
+                Add(lcheck, g);
+                max := MaximalNonsolvableSubgroups(g);
+                if max=[] then
+                    if not ForAny(lst, x->IsConjugate(super, g, x)) then
+                        Add(lst, g);
+                    fi;
+                else
+                    Append(list, Filtered(List(max, PerfectResiduum), x->Size(x)>=min));
+                fi;
+            od;
+        od;
+    fi;
+
+    od;
+    return lst;
+end;
+
 ConjugacyClassRepsMNSRecursive := function(grp, min)
-    return BySolvableRadicalOp(grp, min, grp, []);
+    return BySolvableRadicalOp1(grp, min, grp, []);
 end;
 
 ###############################################################################
@@ -256,7 +428,7 @@ ConjugacyClassRepsMNSMinSizeNC := function(grp, min)
         Add( checked, g );
         sg := MaximalNonsolvableSubgroupsMinSize(g, min);
         Append( list, sg );
-        if sg = [] and IsMinimalNonSolvableGroup(g) then
+        if sg = [] and IsMinimalNonsolvableGroup(g) then
             Add( mns, g );
         fi;
     od;

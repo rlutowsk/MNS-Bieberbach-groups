@@ -1,5 +1,6 @@
 tic := NanosecondsSinceEpoch;
 toc := x->Int((NanosecondsSinceEpoch()-x)/1000000000);
+tocms := x->Int((NanosecondsSinceEpoch()-x)/1000000);
 Reread("perfect.g");
 Reread("imf.g");
 Reread("qtbl.g");
@@ -8,11 +9,16 @@ Reread("qtbl.g");
 SetMNSFindMinOp(ConjugacyClassRepsMNSBySolvableRadical);
 
 step1 := function(m,t,v)
-    local list, dim;
+    local list, dim, st, tt;
 
     list := [];
     for dim in [1..m] do
-        MNSMakeDimMin(list, dim, t, v); 
+        st := tic();
+        MNSMakeDimMin(list, dim, t, v);
+        tt := tocms(st);
+        if v then
+            PrintFormatted("[1] Dimension {} time: {}ms\n", dim, tt);
+        fi;
     od;
     return Concatenation(List(list, x->x.ccsr));
 end;
@@ -27,15 +33,15 @@ end;
 step4 := function(mns, verbose)
     local id, tbl, qtbl, qtbls;
     qtbls := [];
-    for id in mns do 
-        tbl:=CharacterTableToRec(CharacterTable(PerfectGroup(id))); 
-        tbl.Identifier:=PERFGRP[PerfGrpLoad(id[1])][id[2]][2]; 
-        CharacterTableFromRec(tbl); 
+    for id in mns do
+        tbl:=CharacterTableToRec(CharacterTable(PerfectGroup(id)));
+        tbl.Identifier:=PERFGRP[PerfGrpLoad(id[1])][id[2]][2];
+        CharacterTableFromRec(tbl);
         qtbl:=QCharacterTable(tbl);
         Add(qtbls, qtbl);
         if verbose then
             Print("\nPG.", id[1], ".", id[2], "\n" );
-            Display(qtbl, rec(centralizers:=false, powermaps:=false)); 
+            Display(qtbl, rec(centralizers:=false, powermaps:=false));
             Print("\n");
         fi;
     od;
@@ -43,7 +49,7 @@ step4 := function(mns, verbose)
 end;
 
 run := function(arg)
-    local t, r, maxdim, threshold, verbose, print, display;
+    local t, r, maxdim, threshold, verbose, print, display, output;
 
     maxdim := arg[1];
     threshold := arg[2];
@@ -70,10 +76,14 @@ run := function(arg)
         fi;
     fi;
 
-    LogOutputTo("run.out");
+    output := ValueOption("output");
+    if not IsString(output) then
+        output := "run.out";
+    fi;
+    LogOutputTo(output);
 
     r := rec();
-    
+
     print("[1] Searching for mns subgroups of imf groups in dimension <=", maxdim," of order >=", threshold, ".\n");
     t:=tic();;
     r.imfsg:=step1(maxdim, threshold, verbose);
